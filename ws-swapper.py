@@ -11,6 +11,11 @@ from bpy.props import StringProperty
 bl_info = {
     "name": "Workspace Swapper",
     "blender": (2, 82, 0),
+    "description": "A utility operator to switch to a different workspace.",
+    "author": "Simon Reichel, Sebastian König, Robert Gützkow",
+    "version": (0, 0, 1),
+    "support": "COMMUNITY",
+    "tracker_url": "https://github.com/Amudtogal/blender-workspace-swapper/issues",
     "category": "Interface",
 }
 
