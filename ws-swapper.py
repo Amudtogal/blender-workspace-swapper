@@ -4,6 +4,7 @@
 # Written by Simon Reichel, 2021
 
 import bpy
+from pathlib import Path
 from bpy.types import Operator, AddonPreferences
 from bpy.props import StringProperty
 
@@ -20,21 +21,37 @@ class WorkspaceSwapOperator(Operator):
     bl_label = "Swap Workspace"
     bl_options = {'REGISTER'}
 
-    targetWorkspace: StringProperty(name='Target workspace', default="Modeling")
+    targetWorkspace: StringProperty(name='Target workspace', default="Motion Tracking")
 
     def execute(self, context):
         # don't need to swap if already on there
         if context.workspace.name == self.targetWorkspace:
             return {'CANCELLED'}
 
-        # VAR 1: import workspace from external file
-        if not self.targetWorkspace in bpy.data.workspaces:
-            bpy.ops.workspace.append_activate(idname=self.targetWorkspace, filepath=bpy.utils.user_resource('CONFIG', 'startup.blend'))
-        else:
-        # VAR2: swap workspace locally
+        # Try local workspace swapping first
+        if self.targetWorkspace in bpy.data.workspaces:
             context.window.workspace = bpy.data.workspaces[self.targetWorkspace]
+            return {'FINISHED'}
 
-        return {'FINISHED'}
+        # Try importing from startup blend (this allows user workspaces to be included)
+        success = bpy.ops.workspace.append_activate(
+            idname=self.targetWorkspace,
+            filepath=bpy.utils.user_resource('CONFIG', 'startup.blend'))
+        if success == {'FINISHED'}:
+            return success
+
+        # Last resort: try to import from the blender templates
+        for p in Path(next(bpy.utils.app_template_paths())).rglob("startup.blend"):
+            success = bpy.ops.workspace.append_activate(
+                idname=self.targetWorkspace,
+                filepath=str(p))
+
+            if success == {'FINISHED'}:
+                return success
+        else:
+            print('Workspace Swapper: Could not find the requested workspace "{}"'.format(
+                self.targetWorkspace))
+        return {'CANCELLED'}
 
 
 def register():
